@@ -1,5 +1,5 @@
 import torch
-import DatasetProvider
+from .DatasetProvider import DatasetProvider
 from utils import get_loss_function, get_optimizer
 from rich.console import Console
 from rich.table import Table
