@@ -7,8 +7,8 @@ class ChannelsSelectedConv2d(nn.Module):
         self.selected_in_channels = selected_in_channels
 
         self.layers = nn.ModuleList([
-                nn.LazyConv2d(out_channels=1, kernel_size=kernel_size, stride=1, padding=0) 
-                for _ in self.selected_in_channels
+                nn.Conv2d(in_channels=len(in_channels), out_channels=1, kernel_size=kernel_size, stride=1, padding=0) 
+                for in_channels in self.selected_in_channels
         ])
 
     def forward(self, X):

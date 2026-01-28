@@ -9,9 +9,10 @@ class DatasetName(Enum):
     FASHION_MNIST = "fashion_mnist"
 
 class DatasetProvider:
-    def __init__(self, dataset_name: DatasetName, batch_size: int):
+    def __init__(self, dataset_name: DatasetName, batch_size: int, padding: int = 0):
         self.dataset_name = dataset_name
         self.batch_size = batch_size
+        self.padding = padding
         
         self.trainloader = None
         self.testloader = None
@@ -30,6 +31,7 @@ class DatasetProvider:
             normalize_params = ((0.5,), (0.5,))
 
         transform = transforms.Compose([
+            transforms.Pad(padding=2),
             transforms.ToTensor(),
             transforms.Normalize(*normalize_params)
         ])

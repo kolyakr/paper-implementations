@@ -8,9 +8,9 @@ from rich.live import Live
 from tqdm import tqdm
 
 class Trainer:
-    def __init__(self, model, dataset_name, loss_name, optimizer_name, batch_size, device, lr):
+    def __init__(self, model, dataset, loss_name, optimizer_name, device, lr):
         self.model = model.to(device)
-        self.data = DatasetProvider(dataset_name, batch_size)
+        self.data = dataset
         self.loss = get_loss_function(loss_name)
         self.optimizer = get_optimizer(optimizer_name, model.parameters(), lr)
         self.device = device
@@ -25,7 +25,7 @@ class Trainer:
         self.console.print(Panel.fit(
             f"[bold green]Starting Training[/]\n"
             f"Model: [cyan]{model.__class__.__name__}[/]\n"
-            f"Dataset: [magenta]{dataset_name.value}[/]\n"
+            f"Dataset: [red]{self.data.dataset_name.value}[/]\n"
             f"Device: [yellow]{device}[/]",
             title="Experiment Config"
         ))
@@ -35,12 +35,7 @@ class Trainer:
 
         running_loss = 0.0
 
-        pbar = tqdm(self.data.trainloader, 
-                    desc=f"Epoch {epoch_idx}", 
-                    unit="batch", 
-                    leave=False) 
-        
-        for X_train, y_train in pbar:
+        for X_train, y_train in self.data.trainloader:
             X_train, y_train = X_train.to(self.device), y_train.to(self.device)
 
             self.optimizer.zero_grad()

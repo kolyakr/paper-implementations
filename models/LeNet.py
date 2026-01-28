@@ -44,3 +44,5 @@ class LeNet(nn.Module):
     def forward(self, X):
         return self.net(X)
     
+   
+    
