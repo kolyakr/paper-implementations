@@ -62,11 +62,11 @@ class LeNetVisualization(LeNet):
     
 
 class LeNetV2(nn.Module):
-    def __init__(self, out_features):
+    def __init__(self, out_features, in_channels=1):
         super().__init__()
 
         self.net = nn.Sequential(OrderedDict([
-            ('conv1', nn.Conv2d(in_channels=1, out_channels=6, kernel_size=5, stride=1, padding=0)),
+            ('conv1', nn.Conv2d(in_channels=in_channels, out_channels=6, kernel_size=5, stride=1, padding=0)),
             ('relu1', nn.ReLU()),
             ('pool1', nn.MaxPool2d(kernel_size=2, stride=2)),
             
@@ -81,6 +81,32 @@ class LeNetV2(nn.Module):
             ('fc2', nn.Linear(in_features=120, out_features=84)),
             ('relu4', nn.ReLU()),
             ('fc3', nn.Linear(in_features=84, out_features=out_features))
+        ]))
+
+    def forward(self, X):
+        return self.net(X)
+    
+
+class LeNetV3(nn.Module):
+    def __init__(self, out_features, in_channels=1):
+        super().__init__()
+
+        self.net = nn.Sequential(OrderedDict([
+            ('conv1', nn.Conv2d(in_channels=in_channels, out_channels=12, kernel_size=5, stride=1, padding=0)),
+            ('relu1', nn.ReLU()),
+            ('pool1', nn.MaxPool2d(kernel_size=2, stride=2)),
+            
+            ('conv2', nn.Conv2d(in_channels=12, out_channels=24, kernel_size=3)),
+            ('relu2', nn.ReLU()),
+            ('pool2', nn.MaxPool2d(kernel_size=2, stride=2)),
+            
+            ('flatten', nn.Flatten()),
+            
+            ('fc1', nn.Linear(in_features=864, out_features=200)),
+            ('relu3', nn.ReLU()),
+            ('fc2', nn.Linear(in_features=200, out_features=100)),
+            ('relu4', nn.ReLU()),
+            ('fc3', nn.Linear(in_features=100, out_features=out_features))
         ]))
 
     def forward(self, X):

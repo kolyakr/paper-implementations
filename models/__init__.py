@@ -1,1 +1,1 @@
-from .LeNet import LeNet, LeNetVisualization, LeNetV2
+from .LeNet import LeNet, LeNetVisualization, LeNetV2, LeNetV3

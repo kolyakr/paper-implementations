@@ -9,10 +9,11 @@ class DatasetName(Enum):
     FASHION_MNIST = "fashion_mnist"
 
 class DatasetProvider:
-    def __init__(self, dataset_name: DatasetName, batch_size: int, padding: int = 0):
+    def __init__(self, dataset_name: DatasetName, batch_size: int, padding: int = 0, resize = 0):
         self.dataset_name = dataset_name
         self.batch_size = batch_size
         self.padding = padding
+        self.resize = resize
         
         self.trainloader = None
         self.testloader = None
@@ -30,11 +31,17 @@ class DatasetProvider:
             ds_class = torchvision.datasets.FashionMNIST
             normalize_params = ((0.5,), (0.5,))
 
-        transform = transforms.Compose([
-            transforms.Pad(padding=2),
-            transforms.ToTensor(),
-            transforms.Normalize(*normalize_params)
-        ])
+        transform_list = []
+
+        if self.resize != 0:
+            transform_list.append(transforms.Resize((self.resize, self.resize)))
+        elif self.padding != 0:
+            transform_list.append(transforms.Pad(padding=self.padding))
+
+        transform_list.append(transforms.ToTensor())
+        transform_list.append(transforms.Normalize(*normalize_params))
+
+        transform = transforms.Compose(transform_list)
 
         train_data = ds_class(root="../data", train=True, download=True, transform=transform)
         test_data = ds_class(root="../data", train=False, download=True, transform=transform)
