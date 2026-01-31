@@ -8,11 +8,17 @@ from rich.live import Live
 from tqdm import tqdm
 
 class Trainer:
-    def __init__(self, model, dataset, loss_name, optimizer_name, device, lr):
+    def __init__(self, model, dataset, loss_name, optimizer_name, device, lr, optmizer_params=None, lerarning_schedule_params=None):
         self.model = model.to(device)
         self.data = dataset
         self.loss = get_loss_function(loss_name)
-        self.optimizer = get_optimizer(optimizer_name, model.parameters(), lr)
+        self.optimizer = get_optimizer(optimizer_name, model.parameters(), lr, **optmizer_params)
+
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer=self.optimizer,
+            **lerarning_schedule_params
+        )
+
         self.device = device
 
         self.history = {
@@ -70,6 +76,8 @@ class Trainer:
             total_samples += y_hat.size(0)
 
         loss = running_loss / len(self.data.testloader)
+        self.scheduler.step(loss)
+
         val_err = 1 - (correct / total_samples) 
 
         return loss, val_err
@@ -98,14 +106,3 @@ class Trainer:
                 )
 
         self.console.print("[bold green]✔ Training Complete![/]")
-
-
-
-
-
-
-
-
-
-
-    

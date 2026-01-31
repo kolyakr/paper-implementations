@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from custom_layers import ChannelsSelectedConv2d
+from custom import ChannelsSelectedConv2d
 from collections import OrderedDict
 class LeNet(nn.Module):
     def __init__(self, out_features):

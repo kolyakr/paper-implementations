@@ -34,7 +34,7 @@ class DatasetProvider:
         transform_list = []
 
         if self.resize != 0:
-            transform_list.append(transforms.Resize((self.resize, self.resize)))
+            transform_list.append(transforms.Resize((self.resize, self.resize), interpolation=transforms.InterpolationMode.BILINEAR))
         elif self.padding != 0:
             transform_list.append(transforms.Pad(padding=self.padding))
 
@@ -43,8 +43,8 @@ class DatasetProvider:
 
         transform = transforms.Compose(transform_list)
 
-        train_data = ds_class(root="../data", train=True, download=True, transform=transform)
-        test_data = ds_class(root="../data", train=False, download=True, transform=transform)
+        train_data = ds_class(root="../../data", train=True, download=True, transform=transform)
+        test_data = ds_class(root="../../data", train=False, download=True, transform=transform)
 
         self.trainloader = torch.utils.data.DataLoader(
             dataset=train_data, 

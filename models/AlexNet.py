@@ -7,14 +7,10 @@ BIAS_ZERO_LAYERS = [
     'conv3'
 ]
 
-def layers_init(module, name):
-    if isinstance(module, (nn.Linear, nn.Conv2d)):
-        nn.init.normal_(module.weight, mean=0, std=0.01)
-
-        if name in BIAS_ZERO_LAYERS:
-            nn.init.constant_(module.bias, 0)
-        else:
-            nn.init.constant_(module.bias, 1)
+def layers_init(m):
+    if isinstance(m, (nn.Conv2d, nn.Linear)):
+        nn.init.normal_(m.weight, mean=0, std=0.01)
+        nn.init.constant_(m.bias, 1) 
 
 class AlexNet(nn.Module):
 
