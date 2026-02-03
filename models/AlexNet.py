@@ -44,7 +44,7 @@ class AlexNet(nn.Module):
         )
 
         for name, module in self.net.named_children():
-            layers_init(module, name)
+            layers_init(module)
 
     def forward(self, X):
         return self.net(X)

@@ -6,6 +6,7 @@ from rich.table import Table
 from rich.panel import Panel
 from rich.live import Live
 from tqdm import tqdm
+import torch.nn.functional as F
 
 class Trainer:
     def __init__(self, model, dataset, loss_name, optimizer_name, device, lr, optmizer_params=None, lerarning_schedule_params=None):
@@ -36,7 +37,7 @@ class Trainer:
             title="Experiment Config"
         ))
 
-    def train_epoch(self, epoch_idx):
+    def train_epoch(self):
         self.model.train() # switch to train mode
 
         running_loss = 0.0
@@ -63,7 +64,7 @@ class Trainer:
         total_samples = 0
         correct = 0
 
-        for X_test, y_test in self.data.testloader:
+        for X_test, y_test in self.data.validloader:
             X_test, y_test = X_test.to(self.device), y_test.to(self.device)
 
             y_hat = self.model(X_test)
@@ -75,7 +76,7 @@ class Trainer:
             correct += (y_hat == y_test).sum().item()
             total_samples += y_hat.size(0)
 
-        loss = running_loss / len(self.data.testloader)
+        loss = running_loss / len(self.data.validloader)
         self.scheduler.step(loss)
 
         val_err = 1 - (correct / total_samples) 
@@ -91,7 +92,7 @@ class Trainer:
 
         with Live(summary_table, console=self.console, refresh_per_second=4):
             for epoch in range(1, max_epochs + 1):
-                train_loss = self.train_epoch(epoch)
+                train_loss = self.train_epoch()
                 test_loss, val_err = self.evaluate()
 
                 self.history["train_loss"].append(train_loss)
@@ -106,3 +107,34 @@ class Trainer:
                 )
 
         self.console.print("[bold green]✔ Training Complete![/]")
+    
+    @torch.no_grad()
+    def make_predictions(self):
+        self.model.eval()
+        total_samples = 0
+        correct = 0
+        total_y_hat = []
+        total_y_true = []
+        total_probs = []
+
+        for X_test, y_test in self.data.testloader:
+            X_test, y_test = X_test.to(self.device), y_test.to(self.device)
+
+            logits = self.model(X_test)
+            softmax_probs = F.softmax(logits, dim=1)
+
+            probs, y_hat = torch.max(softmax_probs, dim=1)
+
+            total_y_hat.append(y_hat)
+            total_y_true.append(y_test)
+            total_probs.append(probs)
+
+        total_y_hat = torch.cat(total_y_hat)
+        total_y_true = torch.cat(total_y_true)
+        total_probs = torch.cat(total_probs)
+
+        correct += (total_y_hat == total_y_true).sum().item()
+        total_samples = total_y_hat.shape[0]
+        val_err = 1 - (correct / total_samples) 
+
+        return total_y_hat, total_y_true, val_err, total_probs
