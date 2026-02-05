@@ -297,9 +297,14 @@ def plot_training_results(*histories, titles=None, figsize=None):
     plt.tight_layout()
     plt.show()
 
-def plot_filters_and_feature_maps(images, model, n_images=5, n_filters=7):
-    filters = model.net[0].weight.data[:n_filters]
-    bias = model.net[0].bias.data[:n_filters]
+def plot_filters_and_feature_maps(images, model, n_images=5, n_filters=7, features=False):
+    if features:
+        filters = model.features[0].weight.data[:n_filters]
+        bias = model.features[0].bias.data[:n_filters]
+    else:
+        filters = model.net[0].weight.data[:n_filters]
+        bias = model.net[0].bias.data[:n_filters]
+
     images_ = images[:n_images].to(next(model.parameters()).device)
     
     with torch.no_grad():
