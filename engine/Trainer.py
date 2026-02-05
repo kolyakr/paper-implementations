@@ -9,7 +9,17 @@ from tqdm import tqdm
 import torch.nn.functional as F
 
 class Trainer:
-    def __init__(self, model, dataset, loss_name, optimizer_name, device, lr, optmizer_params=None, lerarning_schedule_params=None):
+    def __init__(
+            self, 
+            model, 
+            dataset, 
+            loss_name, 
+            optimizer_name, 
+            device, 
+            lr, 
+            optmizer_params=None, 
+            lerarning_schedule_params=None,
+            accumulation_steps=1):
         self.model = model.to(device)
         self.data = dataset
         self.loss = get_loss_function(loss_name)
@@ -28,6 +38,8 @@ class Trainer:
             "val_err": []
         }
 
+        self.accumulation_steps = accumulation_steps
+
         self.console = Console()
         self.console.print(Panel.fit(
             f"[bold green]Starting Training[/]\n"
@@ -42,16 +54,18 @@ class Trainer:
 
         running_loss = 0.0
 
-        for X_train, y_train in self.data.trainloader:
+        for idx, (X_train, y_train) in enumerate(self.data.trainloader):
+
             X_train, y_train = X_train.to(self.device), y_train.to(self.device)
 
-            self.optimizer.zero_grad()
-            y_hat = self.model(X_train)
-            loss = self.loss(y_hat, y_train)
-
+            y_hat, _ = self.model(X_train)
+            loss = self.loss(y_hat, y_train) / self.accumulation_steps
 
             loss.backward()
-            self.optimizer.step()
+
+            if (idx + 1)  % self.accumulation_steps == 0:
+                self.optimizer.step()
+                self.optimizer.zero_grad()
 
             running_loss += loss.item()
         
@@ -67,7 +81,7 @@ class Trainer:
         for X_test, y_test in self.data.validloader:
             X_test, y_test = X_test.to(self.device), y_test.to(self.device)
 
-            y_hat = self.model(X_test)
+            y_hat, _ = self.model(X_test)
             loss = self.loss(y_hat, y_test)
 
             running_loss += loss.item()
@@ -120,7 +134,7 @@ class Trainer:
         for X_test, y_test in self.data.testloader:
             X_test, y_test = X_test.to(self.device), y_test.to(self.device)
 
-            logits = self.model(X_test)
+            logits, _ = self.model(X_test)
             softmax_probs = F.softmax(logits, dim=1)
 
             probs, y_hat = torch.max(softmax_probs, dim=1)

@@ -9,22 +9,24 @@ def count_params(net):
     layers_data = {}
     all_param_types = set()
 
-    for name, layer in net.named_children():
-        state = layer.state_dict()
-        if not state:
-            continue
+    for name, layer in net.named_modules():
+        if isinstance(layer, (nn.Conv2d, nn.Linear)):
+            layer_id = f"{name} ({layer.__class__.__name__})"
+            layers_data[layer_id] = {}
             
-        layers_data[name] = {}
-        for key, value in state.items():
-            param_suffix = key.split(".")[-1]
-            all_param_types.add(param_suffix)
-            layers_data[name][param_suffix] = value.numel()
+            for param_name, param in layer.named_parameters():
+                param_suffix = param_name.split(".")[-1] 
+                all_param_types.add(param_suffix)
+                layers_data[layer_id][param_suffix] = param.numel()
+
+    if not layers_data:
+        print("No layers with parameters found.")
+        return
 
     sorted_types = sorted(list(all_param_types), reverse=True) 
-    
-    header = f"{'Layer Name':<15} | " + " | ".join([f"{t:<12}" for t in sorted_types]) + f" | {'Total':<10}"
+    header = f"{'Layer Name':<40} | " + " | ".join([f"{t:<12}" for t in sorted_types]) + f" | {'Total':<10}"
     sep = "-" * len(header)
-    
+
     print(header)
     print(sep)
 
@@ -33,7 +35,7 @@ def count_params(net):
         row_total = sum(counts.values())
         grand_total += row_total
         
-        row_str = f"{name:<15} | "
+        row_str = f"{name:<40} | "
         for p_type in sorted_types:
             val = counts.get(p_type, 0)
             row_str += f"{val:<12} | "
@@ -42,7 +44,7 @@ def count_params(net):
         print(row_str)
 
     print(sep)
-    print(f"{'TOTAL':<15} | " + " " * (len(header) - 30) + f" | {grand_total:<10}")
+    print(f"{'TOTAL':<40} | " + " " * (len(header) - 55) + f" | {grand_total:,}")
 
 def get_optimizer(optimizer_name: str, model_parameters, lr=0.001, **kwargs):
     params = list(model_parameters)

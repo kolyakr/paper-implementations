@@ -19,7 +19,9 @@ class DatasetProvider:
             resize=None,
             random_rotation_degrees=None,
             random_hor_flip_probability=None,
-            random_crop_size=None 
+            random_crop_size=None,
+            pretrained_means=None,
+            pretrained_stds=None
         ):
         self.dataset_name = dataset_name
         self.batch_size = batch_size
@@ -28,6 +30,8 @@ class DatasetProvider:
         self.random_rotation_degrees = random_rotation_degrees
         self.random_hor_flip_probability = random_hor_flip_probability
         self.random_crop_size = random_crop_size
+        self.pretrained_means = pretrained_means
+        self.pretrained_stds = pretrained_stds
         
         self.trainloader = None
         self.testloader = None
@@ -44,21 +48,25 @@ class DatasetProvider:
         elif self.dataset_name == DatasetName.FASHION_MNIST:
             ds_class = torchvision.datasets.FashionMNIST
 
-        preview_dataset = ds_class(
-            root="../../data",
-            train=True,
-            download=True
-        )
+        if self.pretrained_means and self.pretrained_stds:
+            means = self.pretrained_means
+            stds = self.pretrained_stds
+        else:
+            preview_dataset = ds_class(
+                        root="../../data",
+                        train=True,
+                        download=True
+            )
 
-        data = preview_dataset.data
+            data = preview_dataset.data
 
-        if not isinstance(data, torch.Tensor):
-            data = torch.from_numpy(data)
+            if not isinstance(data, torch.Tensor):
+                data = torch.from_numpy(data)
 
-        data = data.float() / 255
+            data = data.float() / 255
 
-        means = data.mean(dim=(0, 1, 2)) 
-        stds = data.std(dim=(0, 1, 2))
+            means = data.mean(dim=(0, 1, 2)) 
+            stds = data.std(dim=(0, 1, 2))
 
         train_transform_list = []
         test_transform_list = []
