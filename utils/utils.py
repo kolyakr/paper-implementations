@@ -46,6 +46,46 @@ def count_params(net):
     print(sep)
     print(f"{'TOTAL':<40} | " + " " * (len(header) - 55) + f" | {grand_total:,}")
 
+    return grand_total
+
+def compute_FLOPS(model, input_size):
+    curr_size = input_size
+    total_flops = 0
+
+    for m in model.modules():
+        if len(list(m.children())) > 0:
+            continue
+
+        if isinstance(m, nn.Conv2d):
+            out_size = ((curr_size - m.kernel_size[0] + 2 * m.padding[0]) // m.stride[0]) + 1
+            
+            layer_flops = 2 * (m.out_channels * out_size**2) * \
+                             (m.in_channels * m.kernel_size[0] * m.kernel_size[1])
+            
+            total_flops += layer_flops
+            curr_size = out_size 
+            print(f"Conv: {m.in_channels}->{m.out_channels}, Size: {curr_size}, FLOPs: {layer_flops:.0f}")
+
+        elif isinstance(m, nn.MaxPool2d):
+            padding = m.padding if isinstance(m.padding, int) else m.padding[0]
+            stride = m.stride if isinstance(m.stride, int) else m.stride[0]
+            kernel = m.kernel_size if isinstance(m.kernel_size, int) else m.kernel_size[0]
+            
+            curr_size = ((curr_size - kernel + 2 * padding) // stride) + 1
+            print(f"Maxpool: New Size {curr_size}")
+
+        elif isinstance(m, nn.Linear):
+            layer_flops = 2 * m.in_features * m.out_features
+            total_flops += layer_flops
+            print(f"Linear: FLOPs: {layer_flops:.0f}")
+
+        elif isinstance(m, nn.AdaptiveAvgPool2d):
+            curr_size = m.output_size[0] if isinstance(m.output_size, tuple) else m.output_size
+            print(f"AvgPool: New Size {curr_size}")
+
+    return total_flops
+
+
 def get_optimizer(optimizer_name: str, model_parameters, lr=0.001, **kwargs):
     params = list(model_parameters)
     if not params:
