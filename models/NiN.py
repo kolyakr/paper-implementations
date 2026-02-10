@@ -10,12 +10,14 @@ def NiN_block(in_channels, out_channels, n_MLP=2, kernel_size=(3, 3), stride=1, 
             kernel_size=kernel_size,
             padding=padding
         ),
+        nn.BatchNorm2d(out_channels),
         nn.ReLU(inplace=True)
     ]
 
     for _ in range(n_MLP):
         block.extend([
             nn.Conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=(1, 1)),
+            nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True)
         ])
     
@@ -23,19 +25,19 @@ def NiN_block(in_channels, out_channels, n_MLP=2, kernel_size=(3, 3), stride=1, 
 
 
 class NiN(nn.Module):
-    def __init__(self, in_channels, out_features):
+    def __init__(self, in_channels, out_features, n_MLP=2):
         super().__init__()
 
         self.features = nn.Sequential(
-            *NiN_block(in_channels=in_channels, out_channels=96, n_MLP=2, kernel_size=(11, 11), stride=4),
+            *NiN_block(in_channels=in_channels, out_channels=96, n_MLP=n_MLP, kernel_size=(11, 11), stride=4),
             nn.MaxPool2d(kernel_size=(3, 3), stride=2),
             nn.Dropout(p=0.5),
-            *NiN_block(in_channels=96, out_channels=256, n_MLP=2, kernel_size=(5, 5), padding=2),
+            *NiN_block(in_channels=96, out_channels=256, n_MLP=n_MLP, kernel_size=(5, 5), padding=2),
             nn.MaxPool2d(kernel_size=(3, 3), stride=2),
             nn.Dropout(p=0.5),
-            *NiN_block(in_channels=256, out_channels=384, n_MLP=2, kernel_size=(3, 3), padding=1),
+            *NiN_block(in_channels=256, out_channels=384, n_MLP=n_MLP, kernel_size=(3, 3), padding=1),
             nn.MaxPool2d(kernel_size=(3, 3), stride=2),
-            *NiN_block(in_channels=384, out_channels=out_features, n_MLP=2, kernel_size=(3, 3), padding=1),
+            *NiN_block(in_channels=384, out_channels=out_features, n_MLP=n_MLP, kernel_size=(3, 3), padding=1),
         )
 
         self.global_avg_pool = nn.Sequential(
@@ -46,5 +48,38 @@ class NiN(nn.Module):
     def forward(self, X):
         features = self.features(X)
         outputs = self.global_avg_pool(features)
+
+        return outputs, features
+    
+
+    
+class NiN_without_AGP(nn.Module):
+    def __init__(self, in_channels, out_features, n_MLP=2):
+        super().__init__()
+
+        self.features = nn.Sequential(
+            *NiN_block(in_channels=in_channels, out_channels=96, n_MLP=n_MLP, kernel_size=(11, 11), stride=4),
+            nn.MaxPool2d(kernel_size=(3, 3), stride=2),
+            nn.Dropout(p=0.5),
+            *NiN_block(in_channels=96, out_channels=256, n_MLP=n_MLP, kernel_size=(5, 5), padding=2),
+            nn.MaxPool2d(kernel_size=(3, 3), stride=2),
+            nn.Dropout(p=0.5),
+            *NiN_block(in_channels=256, out_channels=384, n_MLP=n_MLP, kernel_size=(3, 3), padding=1),
+            nn.MaxPool2d(kernel_size=(3, 3), stride=2),
+            *NiN_block(in_channels=384, out_channels=384, n_MLP=n_MLP, kernel_size=(3, 3), padding=1),
+        )
+
+        self.classifier = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(in_features=384*6*6, out_features=4096),
+            nn.Dropout(p=0.5),
+            nn.Linear(in_features=4096, out_features=4096),
+            nn.Dropout(p=0.5),
+            nn.Linear(in_features=4096, out_features=out_features)
+        )
+    
+    def forward(self, X):
+        features = self.features(X)
+        outputs = self.classifier(features)
 
         return outputs, features

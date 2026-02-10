@@ -118,19 +118,19 @@ class DatasetProvider:
             dataset=train_data, 
             shuffle=True, 
             batch_size=self.batch_size,
-            num_workers=2
+            num_workers=0
         )
 
         self.testloader = torch.utils.data.DataLoader(
             dataset=test_data, 
             shuffle=False,
             batch_size=self.batch_size,
-            num_workers=2
+            num_workers=0
         )
 
         self.validloader = torch.utils.data.DataLoader(
             dataset=valid_data, 
             shuffle=False,
             batch_size=self.batch_size,
-            num_workers=2
+            num_workers=0
         )
