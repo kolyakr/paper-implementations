@@ -4,6 +4,7 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 import torch.nn.functional as F
+from torchinfo import summary
 
 def count_params(net):
     layers_data = {}
@@ -373,6 +374,46 @@ def plot_filters_and_feature_maps(images, model, n_images=5, n_filters=7, featur
             f_map = feature_maps[i, j].detach().cpu().numpy()
             axes[i+1, j+1].imshow(f_map, cmap='bone') 
             axes[i+1, j+1].axis('off')
+
+    plt.tight_layout()
+    plt.show()
+
+def compare_architectures(model_dict, input_size=(1, 3, 224, 224), colors=None):
+    model_names = list(model_dict.keys())
+    if colors is None:
+        colors = ['#1abc9c', '#3498db', '#e74c3c', '#9b59b6', '#f1c40f']
+    
+    params = []
+    flops = []
+    memory = []
+    
+    for name, model in model_dict.items():
+        stats = summary(model, input_size=input_size, verbose=0)
+        
+        params.append(stats.total_params / 1e6)
+        
+        flops.append(stats.total_mult_adds / 1e9)
+        
+        total_bytes = stats.total_input + stats.total_output_bytes + stats.total_param_bytes
+        memory.append(total_bytes / (1024**2))
+
+    # Plotting Logic
+    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+    metrics = [params, flops, memory]
+    titles = ['Total Parameters (Millions) ↓', 
+              'Computational Cost (GFLOPs) ↓', 
+              'Estimated Total Size (MB) ↓']
+    y_labels = ['Millions', 'Giga-Operations', 'MB']
+
+    for i in range(3):
+        bars = axes[i].bar(model_names, metrics[i], color=colors[:len(model_names)])
+        axes[i].set_title(titles[i], fontweight='bold')
+        axes[i].set_ylabel(y_labels[i])
+        
+        for bar in bars:
+            height = bar.get_height()
+            axes[i].text(bar.get_x() + bar.get_width()/2., height,
+                         f'{height:.2f}', ha='center', va='bottom', fontsize=10)
 
     plt.tight_layout()
     plt.show()
