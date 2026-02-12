@@ -60,7 +60,7 @@ class Inception(nn.Module):
         )
 
         self.branch4 = nn.Sequential(
-            nn.MaxPool2d(kernel_size=(3, 3), padding=(1, 1), stride=1),
+            nn.MaxPool2d(kernel_size=(3, 3), padding=(1, 1), stride=1, ceil_mode=True),
             BasicConv2d(
                 in_channels=in_channels, 
                 out_channels=out_channels_br4_proj, 
@@ -110,7 +110,7 @@ class GoogLeNet(nn.Module):
             stride=2
         ) #output - 112 x 112 x 64
 
-        self.maxpool1 = nn.MaxPool2d(kernel_size=(3, 3), stride=2) #output - 56 x 56 x 64
+        self.maxpool1 = nn.MaxPool2d(kernel_size=(3, 3), stride=2, ceil_mode=True) #output - 56 x 56 x 64
 
         self.conv2 = BasicConv2d(
             in_channels=64,
@@ -127,7 +127,7 @@ class GoogLeNet(nn.Module):
             padding=(1, 1)
         ) #output - 56 x 56 x 192
 
-        self.maxpool2 = nn.MaxPool2d(kernel_size=(3, 3), stride=2) #output - 28 x 28 x 192
+        self.maxpool2 = nn.MaxPool2d(kernel_size=(3, 3), stride=2, ceil_mode=True) #output - 28 x 28 x 192
 
         self.inception3a = Inception(
             in_channels=192,
@@ -149,7 +149,7 @@ class GoogLeNet(nn.Module):
             out_channels_br4_proj=64
         ) #output - 28 x 28 x 480
 
-        self.maxpool3 = nn.MaxPool2d(kernel_size=(3, 3), stride=2) #output - 14 x 14 x 480
+        self.maxpool3 = nn.MaxPool2d(kernel_size=(3, 3), stride=2, ceil_mode=True) #output - 14 x 14 x 480
 
         self.inception4a = Inception(
             in_channels=480,
@@ -211,7 +211,7 @@ class GoogLeNet(nn.Module):
             out_channels_br4_proj=128
         ) # Output: 14 x 14 x 832
 
-        self.maxpool4 = nn.MaxPool2d(kernel_size=(3, 3), stride=2) #output - 7 x 7 x 832
+        self.maxpool4 = nn.MaxPool2d(kernel_size=(3, 3), stride=2, ceil_mode=True) #output - 7 x 7 x 832
 
         self.inception5a = Inception(
             in_channels=832,
@@ -271,13 +271,7 @@ class GoogLeNet(nn.Module):
         X = self.dropout(X)
         logits = self.fc(X)
 
-        return logits, aux1_out, aux2_out
-
-
-
-
-
-
-
-
-
+        if self.training:
+            return logits, aux1_out, aux2_out
+        else:
+            return (logits, None)
