@@ -89,8 +89,10 @@ class DatasetProvider:
 
         if self.resize is not None and self.random_crop_size is not None:
             test_transform_list.append(transforms.Resize(size=(self.random_crop_size, self.random_crop_size), interpolation=transforms.InterpolationMode.BILINEAR))
-        elif self.resize is not None:
+        if self.resize is not None:
             test_transform_list.append(transforms.Resize(size=(self.resize, self.resize), interpolation=transforms.InterpolationMode.BILINEAR))
+        if self.padding is not None:
+            test_transform_list.append(transforms.Pad(padding=self.padding))
 
         test_transform = transforms.Compose([
             *test_transform_list,
